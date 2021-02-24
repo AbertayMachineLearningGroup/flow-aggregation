@@ -24,6 +24,10 @@ To be updated.
 | --slice_attacks_number | Slice number(s) to use when slicing the attack files | 0 | Comma separated |
 | --slice_attacks_number | Slice number(s) to use when slicing the attack files | 0 | Comma separated |
 | --number_of_features | Number of RFE features to print | 5 | Only used in print_features script |
+| --output  | The output file name | result.csv ||
+| --choose_features |  Whether or not to run RFE | 0 | 0/1 (check selected_features argument) |
+| --selected_features | The features to use during training | 'fwd_mean_pkt_len, bwd_mean_pkt_len, fwd_min_pkt_len, bwd_min_pkt_len, fwd_max_pkt_len,num_src_flows, src_ip_dst_prt_delta' | |
+
 
 
 ## How to Run the repository:
@@ -32,7 +36,7 @@ To be updated.
 Clone this repository.
 run pcap_parser.py [pcap file path] 
 run print_features [specify the parameters as required] 
-run main.py [specify the parameters as required]
+run flow_aggregation.py [specify the parameters as required]
 
 ```
 
