@@ -44,10 +44,6 @@ packet_dict = {'pkt_num': pkt_num_list,
 
 
 
-# All traffic is either TCP or UDP
-#f = open('nmap_scan_all_10x_network_sU_Scan.pcap', 'rb')
-#f = open('normal_operation.pcap', 'rb')
-#sliding_window = True
 
 if len(sys.argv) > 1:
     print(sys.argv[1])
@@ -56,10 +52,7 @@ if len(sys.argv) > 1:
 else:
     f = open('Wednesday-WorkingHours_Slowhttptest.pcap', 'rb')
     output_file = 'Wednesday-WorkingHours_Slowhttptest.csv'
-  
-#if len(sys.argv) > 2 and sys.argv[2] == "0":
-#    output_file = sys.argv[1].replace(".pcap", ".csv")
-#    sliding_window = False
+
     
 pcap = dpkt.pcap.Reader(f)
 
@@ -388,16 +381,7 @@ df_biflow = pd.DataFrame(columns=['ip_src', 'ip_dst', 'prt_src', 'prt_dst', 'pro
 #feature_row = feature_df.iloc[0,:].copy()
 # process the TCP flows
 print('\nProcessing TCP flows')
-sibilings_counts = {}
-delta_avg = {}
-bi_flow_time = {}
 
-for i in range(5):
-    current_time_window = (i+1) * 10
-    sibilings_counts[current_time_window] = {}
-    delta_avg[current_time_window] = {}
-    bi_flow_time[current_time_window] = {}
-    
 num_uniflows = len(meta_list)
 for row_num in range(num_uniflows):
     current = meta_list[row_num]
@@ -428,12 +412,7 @@ for row_num in range(num_uniflows):
                 meta_list[row_num].processed = True
                 meta_list[inner_row].processed = True
                 
-                biflowlist = [str(meta_list_time_0[row_num] // 10)+'_'+current.ip_src,
-                          str(meta_list_time_0[row_num] // 20)+'_'+current.ip_src,
-                          str(meta_list_time_0[row_num] // 30)+'_'+current.ip_src,
-                          str(meta_list_time_0[row_num] // 40)+'_'+current.ip_src,
-                          str(meta_list_time_0[row_num] // 50)+'_'+current.ip_src,
-                          current.ip_src, current.ip_dst, current.prt_src, current.prt_dst, current.proto,
+                biflowlist = [current.ip_src, current.ip_dst, current.prt_src, current.prt_dst, current.proto,
                                   current.num_pkts, inner.num_pkts, current.mean_iat, inner.mean_iat, current.std_iat,
                                   inner.std_iat, current.min_iat, inner.min_iat, current.max_iat, inner.max_iat,current.mean_offset, inner.mean_offset,
                                   current.mean_pkt_len, inner.mean_pkt_len, current.std_pkt_len, inner.std_pkt_len,
@@ -441,8 +420,7 @@ for row_num in range(num_uniflows):
                                   current.num_bytes, inner.num_bytes, current.num_psh_flags, inner.num_psh_flags,
                                   current.num_rst_flags, inner.num_rst_flags, current.num_urg_flags, inner.num_urg_flags]
                 
-                columns_list=['sec_1_ip_src','sec_2_ip_src','sec_3_ip_src','sec_4_ip_src','sec_5_ip_src'
-                              , 'ip_src', 'ip_dst', 'prt_src', 'prt_dst', 
+                columns_list=['ip_src', 'ip_dst', 'prt_src', 'prt_dst', 
                                'proto', 'fwd_num_pkts', 'bwd_num_pkts',
                                'fwd_mean_iat', 'bwd_mean_iat', 'fwd_std_iat', 
                                'bwd_std_iat', 'fwd_min_iat', 'bwd_min_iat',
@@ -453,39 +431,8 @@ for row_num in range(num_uniflows):
                                'bwd_num_bytes', 'fwd_num_psh_flags', 'bwd_num_psh_flags',
                                'fwd_num_rst_flags', 'bwd_num_rst_flags', 'fwd_num_urg_flags', 
                                'bwd_num_urg_flags']
-                
-                for i in range(5):
-                    current_time_window = (i+1) * 10
-                    columns_list.append('num_src_flows_{}'.format(current_time_window))
-                    columns_list.append('src_ip_dst_prt_delta_{}'.format(current_time_window))
-                    
-                    if current.ip_src not in sibilings_counts[current_time_window]:
-                        sibilings_counts[current_time_window][current.ip_src] = 0
-                        delta_avg[current_time_window][current.ip_src] = []
-                        bi_flow_time[current_time_window][current.ip_src] = []
-                    else:
-                        min_time = meta_list_time_0[row_num] - current_time_window
-                        del_counter = 0
-                        for temp in  bi_flow_time[current_time_window][current.ip_src]:
-                            if temp < min_time:
-                                del_counter += 1
-                                
-                        sibilings_counts[current_time_window][current.ip_src] -= del_counter
-                        del delta_avg[current_time_window][current.ip_src][0:del_counter]
-                        del bi_flow_time[current_time_window][current.ip_src][0:del_counter]
-    
-                    sibilings_counts[current_time_window][current.ip_src] += 1
-                    delta_avg[current_time_window][current.ip_src].append(current.prt_dst)
-                    bi_flow_time[current_time_window][current.ip_src].append(meta_list_time_0[row_num])
-                    
-                    if meta_list_time_0[row_num] >= current_time_window:
-                        biflowlist.append(int(sibilings_counts[current_time_window][current.ip_src])) 
-                        biflowlist.append(get_mean(delta_avg[current_time_window][current.ip_src])) 
-                    else:
-                        #time < sliding window --> not sliding 
-                        biflowlist.append('') 
-                        biflowlist.append('') 
-                        
+                   
+						
                 df_biflow = df_biflow.append(pd.DataFrame([biflowlist], columns = columns_list), ignore_index=True, sort=False)
                 
             else:
@@ -493,16 +440,7 @@ for row_num in range(num_uniflows):
     else:
         continue
 
-    
-sibilings_counts = {}
-delta_avg = {}
-bi_flow_time = {}
 
-for i in range(5):
-    current_time_window = (i+1) * 10
-    sibilings_counts[current_time_window] = {}
-    delta_avg[current_time_window] = {}
-    bi_flow_time[current_time_window] = {}
     
 print('\nProcessing UDP flows')
 # Process the UDP flows
@@ -524,20 +462,14 @@ for row_num in range(num_uniflows):
             meta_list[row_num].processed = True
             # UDP flows have no reverse direction so i have filled the redundant fields with
             # dupicate forward direction data 
-            biflowlist = [str(meta_list_time_0[row_num] // 10)+'_'+current.ip_src,
-                          str(meta_list_time_0[row_num] // 20)+'_'+current.ip_src,
-                          str(meta_list_time_0[row_num] // 30)+'_'+current.ip_src,
-                          str(meta_list_time_0[row_num] // 40)+'_'+current.ip_src,
-                          str(meta_list_time_0[row_num] // 50)+'_'+current.ip_src,
-                          current.ip_src, current.ip_dst, current.prt_src, current.prt_dst, current.proto,
+            biflowlist = [current.ip_src, current.ip_dst, current.prt_src, current.prt_dst, current.proto,
                           current.num_pkts, current.num_pkts, current.mean_iat, current.mean_iat, current.std_iat,
                           current.std_iat, current.min_iat, current.min_iat, current.max_iat, current.max_iat, current.mean_offset, current.mean_offset,
                           current.mean_pkt_len, current.mean_pkt_len, current.std_pkt_len, current.std_pkt_len,
                           current.min_pkt_len, current.min_pkt_len, current.max_pkt_len, current.max_pkt_len,
                           current.num_bytes, current.num_bytes, current.num_psh_flags, current.num_psh_flags,
                           current.num_rst_flags, current.num_rst_flags, current.num_urg_flags, current.num_urg_flags]
-            columns_list=['sec_1_ip_src','sec_2_ip_src','sec_3_ip_src','sec_4_ip_src','sec_5_ip_src',
-                          'ip_src', 'ip_dst', 'prt_src', 'prt_dst', 
+            columns_list=['ip_src', 'ip_dst', 'prt_src', 'prt_dst', 
                                                                                    'proto', 'fwd_num_pkts', 'bwd_num_pkts',
                                                                                    'fwd_mean_iat', 'bwd_mean_iat', 'fwd_std_iat', 
                                                                                    'bwd_std_iat', 'fwd_min_iat', 'bwd_min_iat',
@@ -549,37 +481,6 @@ for row_num in range(num_uniflows):
                                                                                    'fwd_num_rst_flags', 'bwd_num_rst_flags', 'fwd_num_urg_flags', 
                                                                                    'bwd_num_urg_flags']   
             
-            for i in range(5):
-                current_time_window = (i+1) * 10
-                columns_list.append('num_src_flows_{}'.format(current_time_window))
-                columns_list.append('src_ip_dst_prt_delta_{}'.format(current_time_window))
-                
-                if current.ip_src not in sibilings_counts[current_time_window]:
-                    sibilings_counts[current_time_window][current.ip_src] = 0
-                    delta_avg[current_time_window][current.ip_src] = []
-                    bi_flow_time[current_time_window][current.ip_src] = []
-                else:
-                    min_time = meta_list_time_0[row_num] - current_time_window
-                    del_counter = 0
-                    for temp in  bi_flow_time[current_time_window][current.ip_src]:
-                        if temp < min_time:
-                            del_counter += 1
-
-                    sibilings_counts[current_time_window][current.ip_src] -= del_counter
-                    del delta_avg[current_time_window][current.ip_src][0:del_counter]
-                    del bi_flow_time[current_time_window][current.ip_src][0:del_counter]
-
-                sibilings_counts[current_time_window][current.ip_src] += 1
-                delta_avg[current_time_window][current.ip_src].append(current.prt_dst)
-                bi_flow_time[current_time_window][current.ip_src].append(meta_list_time_0[row_num])
-                
-                if meta_list_time_0[row_num] >= current_time_window:
-                    biflowlist.append(int(sibilings_counts[current_time_window][current.ip_src])) 
-                    biflowlist.append(get_mean(delta_avg[current_time_window][current.ip_src])) 
-                else:
-                    #time < sliding window --> not sliding
-                    biflowlist.append('') 
-                    biflowlist.append('')                     
             
             df_biflow = df_biflow.append(pd.DataFrame([biflowlist], columns = columns_list), ignore_index=True, sort=False)
         else:
@@ -627,40 +528,9 @@ csv_columns = ['ip_src', 'ip_dst', 'prt_src', 'prt_dst',
                         'fwd_num_rst_flags', 'bwd_num_rst_flags', 'fwd_num_urg_flags', 
                         'bwd_num_urg_flags', 'num_src_flows', 'src_ip_dst_prt_delta']
 
-for i in range(5):
-    current_time_window = (i+1) * 10
-    df_biflow['num_src_flows'] = df_biflow['num_src_flows_{}'.format(current_time_window)]
-    df_biflow['src_ip_dst_prt_delta'] = df_biflow['src_ip_dst_prt_delta_{}'.format(current_time_window)]
-    
-    df_biflow.to_csv('biflow_Sliding_Window_{}_'.format(current_time_window) + output_file, sep=',', columns=csv_columns) 
-
 
 df_biflow['num_src_flows'] = 0
 df_biflow['src_ip_dst_prt_delta'] = 0
-
-for i in range(5):
-    biflow_column = 'sec_{}_ip_src'.format(str(i+1))
-    
-    addr_dict = dict(df_biflow[biflow_column].value_counts())
-    
-    for key, value in addr_dict.items():
-        df_biflow.loc[df_biflow[biflow_column] == key, 'num_src_flows'] = value
-    
-    for key, value in addr_dict.items():
-        rows = df_biflow[df_biflow[biflow_column] == key]['prt_dst']
-        l = list(rows)
-        l.sort()
-        ave_diff = 0
-        if len(l) == 1:
-            ave_diff = l[0]
-        elif len(l) > 0:
-            ave_diff = np.absolute(np.diff(l)).mean()
-        df_biflow.loc[df_biflow[biflow_column] == key, 'src_ip_dst_prt_delta']= ave_diff
-    
-    
-#    df_biflow.drop('sec_ip_src', axis = 1, inplace = True)
-    
-    df_biflow.to_csv('biflow_Window_{}_'.format(str((i+1)*10)) + output_file, sep=',', columns=csv_columns) 
 
 biflow_column = 'ip_src'
 
