@@ -41,4 +41,5 @@ run flow_aggregation.py [specify the parameters as required]
 ```
 
 - The output of pcap_parser will be saved as 'pcap_file_name.csv'.
-- Print features will display the RFE ranked features in order (slicing in parameters is only used if set, default is to use the whole files). 
+- Print features script will display the RFE ranked features in order (slicing in parameters is only used if set, default is to use the whole files). 
+- Flow aggregation script will output the classification accuracy and the confusion matrices for a 5-fold cross validation.

@@ -147,18 +147,12 @@ if __name__ == '__main__':
         
     column_names = list(normal.columns.values)
     del normal
-    #normal = normal.values
-    #stealth = stealth.values
 
-    #XY = np.concatenate((normal, stealth), axis=0)
     width = XY.shape[1]
     length = XY.shape[0]
     X = XY.iloc[:,0:width-total_classes-1].copy()
     Y = XY.iloc[:,(width-total_classes-1)].copy()
     Y_Labels = XY.iloc[:,(width-total_classes):].copy()
-    #X_df = pd.DataFrame(X)
-    #sns.pairplot(X_df)
-    #sns.plt.show()
     
     # Apply feature scaling to inputs only
     scaler = StandardScaler()
@@ -187,19 +181,12 @@ if __name__ == '__main__':
         
         Xreduced = np.array(filterColumns_2(f_columns, pd.DataFrame(Xtrans, columns = X.columns)))
 
-    #scores = rfe.grid_scores_
-    #scores_df = pd.DataFrame(scores)
-    #scores_df.to_csv('rfe_scores_stealth.csv', sep='\t', index=False)
-    
-    
-    #X_train, X_test, Y_train, Y_test = train_test_split(X, Y, train_size = 0.8, random_state = 2017, stratify=Y)
     X = Xreduced
     Y = Y.values
     
-   #kfold = StratifiedKFold(n_splits=10, shuffle=True, random_state=2017)
     kfold = StratifiedKFold(n_splits=5, shuffle=True, random_state=2017)
     
-    # Try inputs: num pkts per flow, time between pkts, ave pkt size
+
     
     iteration = 1
     accscores = []
@@ -230,10 +217,6 @@ if __name__ == '__main__':
         # Predicting the Test set results
         Y_pred = classifier.predict(X[test])
         Y_pred =  np.argmax(Y_pred, axis = 1)
-        #Y_pred  = (Y_pred == Y_pred.max(axis=1)[:,None]).astype(int)
-        #Y_pred = (Y_pred > 0.5)
-        
-        # Making the Confusion Matrix(a == a.max(axis=1)[:,None]).astype(int)
         
         cm = confusion_matrix(Y[test], Y_pred)
         cr = classification_report(Y[test],Y_pred, digits=4)
@@ -243,9 +226,6 @@ if __name__ == '__main__':
         print(cr, file=open(output_file, "a"))
         
        
-        #recall = (cm[1,1] + cm[2,2]) / (cm[1,1] + cm[1,0] + cm[2,2] + cm[2,0]) * 100
-        #print("Recall = ", recall)
-        #print("Recall = ", recall, file=open(output_file, "a"))
         acc = 0
         for i in range(total_classes):
                 acc += cm[i, i]
@@ -254,18 +234,15 @@ if __name__ == '__main__':
         print("Accuracy = ", acc)
         print("Accuracy = ", acc, file=open(output_file, "a"))
         accscores.append(acc)
-        #recallscores.append(recall)
+
         print("iteration = ", iteration)
         print("iteration = ", iteration, file=open(output_file, "a"))
         iteration+=1
     
     print("Accuracy Ave = " , np.mean(accscores))
     print("Accuracy Std = " , np.std(accscores))
-    #print("Recall Ave = " , np.mean(recallscores))
-    #print("Recall Std = " , np.std(recallscores))
+
     
     print("Accuracy Ave = " , np.mean(accscores), file=open(output_file, "a"))
     print("Accuracy Std = " , np.std(accscores), file=open(output_file, "a"))
-    #print("Recall Ave = " , np.mean(recallscores), file=open(output_file, "a"))
-    #print("Recall Std = " , np.std(recallscores), file=open(output_file, "a"))
 
